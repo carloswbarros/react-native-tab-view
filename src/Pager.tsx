@@ -5,6 +5,7 @@ import {
   Keyboard,
   I18nManager,
   InteractionManager,
+  Text,
 } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, {
@@ -783,41 +784,50 @@ export default class Pager<T extends Route> extends React.Component<
       this.translateX
     );
 
+    const animatedView = (children: any) => (
+      <Animated.View
+        removeClippedSubviews={removeClippedSubviews}
+        style={[
+          styles.container,
+          layout.width
+            ? {
+              width: layout.width * navigationState.routes.length,
+              transform: [{ translateX }] as any,
+            }
+            : null,
+        ]}
+      >
+        <PagerContext.Provider value={this.providerVal}>
+          <Text>Hello Test</Text>
+          {children}
+        </PagerContext.Provider>
+      </Animated.View>
+    );
+
+    const contentView = (children: any) => {
+      return swipeEnabled && this.state.enabled 
+        ? (<PanGestureHandler
+            ref={this.gestureHandlerRef}
+            simultaneousHandlers={this.state.childPanGestureHandlerRefs}
+            waitFor={this.state.childPanGestureHandlerRefs}
+            enabled={layout.width !== 0 && swipeEnabled && this.state.enabled}
+            onGestureEvent={this.handleGestureEvent}
+            onHandlerStateChange={this.handleGestureEvent}
+            activeOffsetX={[-SWIPE_DISTANCE_MINIMUM, SWIPE_DISTANCE_MINIMUM]}
+            failOffsetY={[-SWIPE_DISTANCE_MINIMUM, SWIPE_DISTANCE_MINIMUM]}
+            {...gestureHandlerProps}
+          >
+            {animatedView(children)}
+          </PanGestureHandler>) 
+        : animatedView(children)
+    }
+
     return children({
       position: this.position,
       addListener: this.addListener,
       removeListener: this.removeListener,
       jumpTo: this.jumpTo,
-      render: (children) => (
-        <PanGestureHandler
-          ref={this.gestureHandlerRef}
-          simultaneousHandlers={this.state.childPanGestureHandlerRefs}
-          waitFor={this.state.childPanGestureHandlerRefs}
-          enabled={layout.width !== 0 && swipeEnabled && this.state.enabled}
-          onGestureEvent={this.handleGestureEvent}
-          onHandlerStateChange={this.handleGestureEvent}
-          activeOffsetX={[-SWIPE_DISTANCE_MINIMUM, SWIPE_DISTANCE_MINIMUM]}
-          failOffsetY={[-SWIPE_DISTANCE_MINIMUM, SWIPE_DISTANCE_MINIMUM]}
-          {...gestureHandlerProps}
-        >
-          <Animated.View
-            removeClippedSubviews={removeClippedSubviews}
-            style={[
-              styles.container,
-              layout.width
-                ? {
-                    width: layout.width * navigationState.routes.length,
-                    transform: [{ translateX }] as any,
-                  }
-                : null,
-            ]}
-          >
-            <PagerContext.Provider value={this.providerVal}>
-              {children}
-            </PagerContext.Provider>
-          </Animated.View>
-        </PanGestureHandler>
-      ),
+      render: (children: any) => contentView(children),
     });
   }
 }
